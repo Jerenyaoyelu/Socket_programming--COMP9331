@@ -57,14 +57,16 @@ while True:
         path = message.split()[1].strip()
         filename = path.decode()[1:]
         try:
+            #'r' can only decode string but not image
+            #'rb' decode everything in bytes
             with open (filename,'rb') as f:
                 files= f.read()
-            # print(files)
-            length = len(files)
+
             #create response
-            # h = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: {}\r\n\r\n".format(length)
-            # response = h+files
-            # clientsock.sendall(bytes(response.encode("utf-8")))
+            length = len(files)
+            h = f"HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: {length}\r\n\r\n"
+            clientsock.sendall(bytes(h.encode("utf-8")))
+            clientsock.sendall(files+bytes('\r\n'.encode('utf-8')))
             clientsock.close()
         except IOError:
             clientsock.send(bytes('HTTP/1.1 400 Not Found\r\n','utf-8'))
