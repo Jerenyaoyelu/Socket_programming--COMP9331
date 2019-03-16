@@ -67,5 +67,5 @@ while True:
     except IOError:
         #no '\n' in the front of the header, will fail
         clientsock.sendall(bytes('\nHTTP/1.1 404 Not Found \r\n\r\n','utf-8'))
-        clientsock.sendall(bytes('<h1><center>404 Error: File not Found</center><h1>','utf-8'))
+        clientsock.sendall(bytes('<h1><center>404 ERROR: FILE NOT FOUND</center><h1>','utf-8'))
         
