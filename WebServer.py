@@ -1,6 +1,5 @@
 import sys
 import socket
-from os import curdir,sep
 
 #invalid request exception
 class InvalidRequest(Exception):
@@ -44,33 +43,29 @@ serversock.listen(5) #listen for connection
 #Start the while loop.
 while True:
     clientsock,addr = serversock.accept()
+    message = clientsock.recv(1024)
+
+    #check the validation of request method
+    method = message.split()[0].strip()
+    if method.decode() != 'GET':
+        raise InvalidRequest("Only accepts GET requests")
+    
+    #read the request
+    path = message.split()[1].strip()
+    filename = path.decode()[1:]
     try:
-        message = clientsock.recv(1024)
+        #'r' can only decode string but not image
+        #'rb' decode everything in bytes
+        with open (filename,'rb') as f:
+            files= f.read()
 
-        #check the validation of request method
-        method = message.split()[0].strip()
-        print(method)
-        if method.decode() != 'GET':
-            raise InvalidRequest("Only accepts GET requests")
+        #create response
+        length = len(files)
+        clientsock.sendall(bytes("HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: {length}\r\n\r\n","utf-8"))
+        clientsock.sendall(files+bytes('\r\n','utf-8'))
+        clientsock.close()
+    except IOError:
+        #no '\n' in the front of the header, will fail
+        clientsock.sendall(bytes('\nHTTP/1.1 404 Not Found \r\n\r\n','utf-8'))
+        clientsock.sendall(bytes('<h1><center>404 Error: File not Found</center><h1>','utf-8'))
         
-        #read the request
-        path = message.split()[1].strip()
-        filename = path.decode()[1:]
-        try:
-            #'r' can only decode string but not image
-            #'rb' decode everything in bytes
-            with open (filename,'rb') as f:
-                files= f.read()
-
-            #create response
-            length = len(files)
-            h = f"HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: {length}\r\n\r\n"
-            clientsock.sendall(bytes(h.encode("utf-8")))
-            clientsock.sendall(files+bytes('\r\n'.encode('utf-8')))
-            clientsock.close()
-        except IOError:
-            clientsock.send(bytes('HTTP/1.1 400 Not Found\r\n','utf-8'))
-    except InvalidRequest as e:
-        clientsock.send(bytes('HTTP/1.1 400 Not Found\r\n','utf-8'))
-        clientsock.send('Content-Type: text/html' + '\r\n'*2)
-        clientsock.send('<h1>Invalid Request: %s</h1>' % e)
